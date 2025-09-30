@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Education Management System (EMS)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            font-family: 'Inter', sans-serif;
+        }
+        .container-shadow {
+            box-shadow: 0 15px 40px -8px rgba(23, 30, 93, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .tab-content {
+            animation: fadeIn 0.4s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-indigo-50 min-h-screen flex items-center justify-center p-4">
+
+    <div id="app" class="w-full max-w-4xl bg-white rounded-xl p-6 md:p-10 container-shadow">
+        <h1 class="text-3xl font-extrabold text-indigo-700 mb-2 text-center">
+            Education Management System (EMS)
+        </h1>
+        <p class="text-sm text-gray-500 mb-8 text-center">
+            Data is managed using structured OOP principles (Model, Service, Persistence).
+        </p>
+
+        <div class="flex border-b border-gray-200 mb-6">
+            <button id="tabStudents" data-tab="students"
+                    class="tab-btn px-6 py-3 font-semibold text-sm rounded-t-lg transition duration-200 border-b-4 border-indigo-600 text-indigo-700 bg-indigo-50">
+                Student Management
+            </button>
+            <button id="tabCourses" data-tab="courses"
+                    class="tab-btn px-6 py-3 font-semibold text-sm rounded-t-lg transition duration-200 border-b-4 border-transparent text-gray-500 hover:text-indigo-600">
+                Course Management
+            </button>
+        </div>
+
+        <div id="contentArea" class="relative">
+            <div id="students" class="tab-content">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Students</h2>
+                
+                <div class="p-4 mb-6 bg-gray-50 rounded-lg border border-gray-200 flex space-x-3">
+                    <input type="text" id="newStudentName" placeholder="New Student Name"
+                           class="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                    <button id="addStudentBtn"
+                            class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 transition duration-150 text-sm">
+                        Add Student
+                    </button>
+                </div>
+
+                <div id="studentListContainer" class="space-y-3">
+                    <p class="text-center text-gray-500 py-4">Loading students...</p>
+                </div>
+            </div>
+
+            <div id="courses" class="tab-content hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Courses</h2>
+
+                <div class="p-4 mb-6 bg-gray-50 rounded-lg border border-gray-200 flex space-x-3">
+                    <input type="text" id="newCourseTitle" placeholder="Course Title (e.g., OOP in Java)"
+                           class="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                    <input type="number" id="newCourseCapacity" placeholder="Capacity" min="1" value="30"
+                           class="w-24 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                    <button id="addCourseBtn"
+                            class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 transition duration-150 text-sm">
+                        Add Course
+                    </button>
+                </div>
+
+                <div id="courseListContainer" class="space-y-3">
+                    <p class="text-center text-gray-500 py-4">Loading courses...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="enrollmentModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl p-8 w-full max-w-lg shadow-2xl">
+                <h3 id="modalTitle" class="text-xl font-bold text-indigo-700 mb-4">Enrollment for:</h3>
+                <div id="modalContent">
+                </div>
+                <button id="closeModalBtn" class="mt-6 px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400">
+                    Close
+                </button>
+            </div>
+        </div>
+        
+        <div id="messageBox" class="hidden fixed bottom-5 right-5 p-3 rounded-lg text-white font-semibold shadow-lg transition duration-300 transform"></div>
+    </div>
+
+    <script>
+        (function() {
+            class Student {
+                #studentId;
+                #name;
+                #enrolledCourses = [];
+                
+                constructor(name, id = null, courses = []) {
+                    this.#studentId = id || ('S' + Date.now().toString().slice(-4) + Math.floor(Math.random() * 100));
+                    this.#name = name;
+                    this.#enrolledCourses = courses;
+                }
+                
+                getId() { return this.#studentId; }
+                getName() { return this.#name; }
+                getCourses() { return [...this.#enrolledCourses]; }
+                
+                enroll(courseId) {
+                    if (!this.#enrolledCourses.includes(courseId)) {
+                        this.#enrolledCourses.push(courseId);
+                        return true;
+                    }
+                    return false;
+                }
+                
+                unenroll(courseId) {
+                    const index = this.#enrolledCourses.indexOf(courseId);
+                    if (index > -1) {
+                        this.#enrolledCourses.splice(index, 1);
+                        return true;
+                    }
+                    return false;
+                }
+
+                toSimpleObject() {
+                    return {
+                        id: this.#studentId,
+                        name: this.#name,
+                        enrolledCourses: this.#enrolledCourses
+                    };
+                }
+            }
+
+            class Course {
+                #courseId;
+                #title;
+                #capacity;
+                
+                constructor(title, capacity, id = null) {
+                    this.#courseId = id || ('C' + Date.now().toString().slice(-4) + Math.floor(Math.random() * 100));
+                    this.#title = title;
+                    this.#capacity = capacity;
+                }
+                
+                getId() { return this.#courseId; }
+                getTitle() { return this.#title; }
+                getCapacity() { return this.#capacity; }
+
+                toSimpleObject() {
+                    return {
+                        id: this.#courseId,
+                        title: this.#title,
+                        capacity: this.#capacity
+                    };
+                }
+            }
+
+            class EducationManagementService {
+                #students = [];
+                #courses = [];
+                
+                constructor() {
+                    this.loadData();
+                }
+                
+                addStudent(name) {
+                    if (!name || name.trim() === "") {
+                        this.showMessage("Student name cannot be empty.", 'error');
+                        return null;
+                    }
+                    const newStudent = new Student(name.trim());
+                    this.#students.push(newStudent);
+                    this.saveData();
+                    this.showMessage("Student added successfully.", 'success');
+                    return newStudent;
+                }
+                
+                removeStudent(id) {
+                    const initialLength = this.#students.length;
+                    this.#students = this.#students.filter(s => s.getId() !== id);
+                    if (this.#students.length < initialLength) {
+                        this.saveData();
+                        this.showMessage("Student removed successfully.", 'success');
+                        return true;
+                    }
+                    return false;
+                }
+
+                addCourse(title, capacityStr) {
+                    const capacity = parseInt(capacityStr);
+                    if (!title || title.trim() === "" || isNaN(capacity) || capacity <= 0) {
+                        this.showMessage("Invalid course details (Title required, Capacity must be > 0).", 'error');
+                        return null;
+                    }
+                    const newCourse = new Course(title.trim(), capacity);
+                    this.#courses.push(newCourse);
+                    this.saveData();
+                    this.showMessage("Course added successfully.", 'success');
+                    return newCourse;
+                }
+
+                removeCourse(id) {
+                    const initialLength = this.#courses.length;
+                    this.#courses = this.#courses.filter(c => c.getId() !== id);
+                    
+                    this.#students.forEach(s => s.unenroll(id));
+
+                    if (this.#courses.length < initialLength) {
+                        this.saveData();
+                        this.showMessage("Course and all related enrollments removed.", 'success');
+                        return true;
+                    }
+                    return false;
+                }
+                
+                enrollStudent(studentId, courseId) {
+                    const student = this.#students.find(s => s.getId() === studentId);
+                    const course = this.#courses.find(c => c.getId() === courseId);
+                    
+                    if (!student || !course) return this.showMessage("Enrollment failed: Student or Course not found.", 'error');
+                    
+                    const currentEnrollment = this.getStudentsInCourse(courseId).length;
+                    if (currentEnrollment >= course.getCapacity()) {
+                        return this.showMessage(`Enrollment failed: ${course.getTitle()} is full (${course.getCapacity()}/${course.getCapacity()}).`, 'error');
+                    }
+                    
+                    if (student.enroll(courseId)) {
+                        this.saveData();
+                        this.showMessage(`${student.getName()} enrolled in ${course.getTitle()}.`, 'success');
+                        return true;
+                    }
+                    this.showMessage("Enrollment failed: Student already enrolled in this course.", 'error');
+                    return false;
+                }
+                
+                unenrollStudent(studentId, courseId) {
+                    const student = this.#students.find(s => s.getId() === studentId);
+                    const course = this.#courses.find(c => c.getId() === courseId);
+
+                    if (student && student.unenroll(courseId)) {
+                        this.saveData();
+                        this.showMessage(`${student.getName()} unenrolled from ${course.getTitle()}.`, 'success');
+                        return true;
+                    }
+                    this.showMessage("Unenrollment failed.", 'error');
+                    return false;
+                }
+
+                getStudents() { return [...this.#students]; }
+                getCourses() { return [...this.#courses]; }
+                getStudentById(id) { return this.#students.find(s => s.getId() === id); }
+                getCourseById(id) { return this.#courses.find(c => c.getId() === id); }
+                
+                getStudentsInCourse(courseId) {
+                    return this.#students.filter(s => s.getCourses().includes(courseId));
+                }
+                
+                getEnrollmentCount(courseId) {
+                    return this.getStudentsInCourse(courseId).length;
+                }
+                
+                showMessage(message, type = 'info') {
+                    const box = document.getElementById('messageBox');
+                    box.textContent = message;
+                    box.className = `fixed bottom-5 right-5 p-3 rounded-lg text-white font-semibold shadow-lg transition duration-300 transform translate-x-0`;
+                    
+                    if (type === 'success') {
+                        box.classList.add('bg-green-600');
+                    } else if (type === 'error') {
+                        box.classList.add('bg-red-600');
+                    } else {
+                        box.classList.add('bg-blue-600');
+                    }
+                    box.classList.remove('hidden', 'translate-x-full');
+                    
+                    setTimeout(() => {
+                        box.classList.add('translate-x-full');
+                        box.classList.remove('translate-x-0');
+                    }, 3000);
+                }
+
+                saveData() {
+                    const simpleStudents = this.#students.map(s => s.toSimpleObject());
+                    const simpleCourses = this.#courses.map(c => c.toSimpleObject());
+                    localStorage.setItem('ems_students', JSON.stringify(simpleStudents));
+                    localStorage.setItem('ems_courses', JSON.stringify(simpleCourses));
+                }
+
+                loadData() {
+                    const storedStudents = JSON.parse(localStorage.getItem('ems_students') || '[]');
+                    const storedCourses = JSON.parse(localStorage.getItem('ems_courses') || '[]');
+
+                    this.#students = storedStudents.map(data => 
+                        new Student(data.name, data.id, data.enrolledCourses)
+                    );
+
+                    this.#courses = storedCourses.map(data => 
+                        new Course(data.title, data.capacity, data.id)
+                    );
+                    
+                    if (this.#students.length === 0 && this.#courses.length === 0) {
+                        this.addCourse("Core Java Fundamentals", 25);
+                        this.addCourse("Advanced Spring Boot", 15);
+                        this.addStudent("Alice Johnson");
+                        this.addStudent("Bob Smith");
+                        
+                        this.enrollStudent(this.#students[0].getId(), this.#courses[0].getId());
+                        this.enrollStudent(this.#students[1].getId(), this.#courses[0].getId());
+                        this.saveData();
+                    }
+                }
+            }
+
+            const emsService = new EducationManagementService();
+            
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const studentListContainer = document.getElementById('studentListContainer');
+            const courseListContainer = document.getElementById('courseListContainer');
+            const enrollmentModal = document.getElementById('enrollmentModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            
+            function renderStudents() {
+                const students = emsService.getStudents();
+                studentListContainer.innerHTML = '';
+                
+                if (students.length === 0) {
+                    studentListContainer.innerHTML = `<p class="text-center text-gray-400 py-4">No students registered.</p>`;
+                    return;
+                }
+                
+                students.forEach(student => {
+                    const courseCount = student.getCourses().length;
+                    const el = document.createElement('div');
+                    el.className = 'flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 shadow-sm';
+                    
+                    el.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-gray-800">${student.getName()}</p>
+                            <p class="text-xs text-gray-500">ID: ${student.getId()} | Enrolled: ${courseCount} courses</p>
+                        </div>
+                        <div class="space-x-2">
+                            <button data-id="${student.getId()}" class="view-student-btn px-3 py-1 bg-indigo-500 text-white text-xs font-medium rounded-md hover:bg-indigo-600 transition">View/Enroll</button>
+                            <button data-id="${student.getId()}" class="delete-student-btn px-3 py-1 bg-red-500 text-white text-xs font-medium rounded-md hover:bg-red-600 transition">Delete</button>
+                        </div>
+                    `;
+                    studentListContainer.appendChild(el);
+                });
+
+                document.querySelectorAll('.view-student-btn').forEach(btn => btn.onclick = (e) => showStudentEnrollmentModal(e.target.dataset.id));
+                document.querySelectorAll('.delete-student-btn').forEach(btn => btn.onclick = (e) => handleDeleteStudent(e.target.dataset.id));
+            }
+
+            function renderCourses() {
+                const courses = emsService.getCourses();
+                courseListContainer.innerHTML = '';
+
+                if (courses.length === 0) {
+                    courseListContainer.innerHTML = `<p class="text-center text-gray-400 py-4">No courses available.</p>`;
+                    return;
+                }
+
+                courses.forEach(course => {
+                    const enrollmentCount = emsService.getEnrollmentCount(course.getId());
+                    const el = document.createElement('div');
+                    el.className = 'flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 shadow-sm';
+                    
+                    const enrollmentColor = enrollmentCount === course.getCapacity() ? 'text-red-600 font-bold' : 'text-green-600';
+
+                    el.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-gray-800">${course.getTitle()}</p>
+                            <p class="text-xs text-gray-500">ID: ${course.getId()} | Capacity: <span class="${enrollmentColor}">${enrollmentCount}/${course.getCapacity()}</span></p>
+                        </div>
+                        <div>
+                            <button data-id="${course.getId()}" class="delete-course-btn px-3 py-1 bg-red-500 text-white text-xs font-medium rounded-md hover:bg-red-600 transition">Delete</button>
+                        </div>
+                    `;
+                    courseListContainer.appendChild(el);
+                });
+                
+                document.querySelectorAll('.delete-course-btn').forEach(btn => btn.onclick = (e) => handleDeleteCourse(e.target.dataset.id));
+            }
+
+            function showStudentEnrollmentModal(studentId) {
+                const student = emsService.getStudentById(studentId);
+                if (!student) return emsService.showMessage("Student data not found.", 'error');
+
+                modalTitle.textContent = `Manage Enrollment for: ${student.getName()}`;
+                const allCourses = emsService.getCourses();
+                
+                let enrolledList = '';
+                let availableOptions = '';
+                
+                student.getCourses().forEach(courseId => {
+                    const course = emsService.getCourseById(courseId);
+                    if (course) {
+                        enrolledList += `
+                            <div class="flex justify-between items-center p-2 bg-indigo-50 rounded-md mb-2">
+                                <span>${course.getTitle()}</span>
+                                <button data-student-id="${studentId}" data-course-id="${courseId}" class="unenroll-btn text-xs text-red-500 hover:text-red-700 font-medium transition">Unenroll</button>
+                            </div>
+                        `;
+                    }
+                });
+
+                allCourses.forEach(course => {
+                    const isEnrolled = student.getCourses().includes(course.getId());
+                    const enrollmentCount = emsService.getEnrollmentCount(course.getId());
+                    const isFull = enrollmentCount >= course.getCapacity();
+
+                    if (!isEnrolled) {
+                        availableOptions += `<option value="${course.getId()}" ${isFull ? 'disabled' : ''}>${course.getTitle()} (${enrollmentCount}/${course.getCapacity()}) ${isFull ? '[FULL]' : ''}</option>`;
+                    }
+                });
+
+                modalContent.innerHTML = `
+                    <h4 class="font-semibold text-gray-700 mb-2">Currently Enrolled:</h4>
+                    <div id="enrolledCoursesList" class="max-h-32 overflow-y-auto mb-4 p-2 border rounded-md">
+                        ${enrolledList || '<p class="text-sm text-gray-400 text-center">Not enrolled in any courses.</p>'}
+                    </div>
+
+                    <h4 class="font-semibold text-gray-700 mb-2 mt-4">Enroll in New Course:</h4>
+                    <div class="flex space-x-2">
+                        <select id="enrollCourseSelect" class="flex-grow p-2 border rounded-md text-sm">
+                            <option value="">-- Select a Course --</option>
+                            ${availableOptions}
+                        </select>
+                        <button id="enrollBtn" data-student-id="${studentId}" 
+                            class="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition"
+                            ${!availableOptions ? 'disabled' : ''}>
+                            Enroll
+                        </button>
+                    </div>
+                `;
+                
+                enrollmentModal.classList.remove('hidden');
+                
+                document.getElementById('enrollBtn').onclick = handleEnrollment;
+                document.querySelectorAll('.unenroll-btn').forEach(btn => btn.onclick = handleUnenrollment);
+            }
+            
+            function handleTabSwitch(e) {
+                const targetTab = e.currentTarget.dataset.tab;
+                
+                tabButtons.forEach(btn => {
+                    btn.classList.remove('border-indigo-600', 'text-indigo-700', 'bg-indigo-50');
+                    btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-indigo-600');
+                });
+                e.currentTarget.classList.add('border-indigo-600', 'text-indigo-700', 'bg-indigo-50');
+                e.currentTarget.classList.remove('border-transparent', 'text-gray-500', 'hover:text-indigo-600');
+
+                tabContents.forEach(content => {
+                    if (content.id === targetTab) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+                
+                if (targetTab === 'students') renderStudents();
+                if (targetTab === 'courses') renderCourses();
+            }
+
+            function handleAddStudent() {
+                const nameInput = document.getElementById('newStudentName');
+                emsService.addStudent(nameInput.value);
+                nameInput.value = '';
+                renderStudents();
+            }
+            
+            function handleDeleteStudent(id) {
+                if (confirm('Are you sure you want to delete this student?')) {
+                    emsService.removeStudent(id);
+                    renderStudents();
+                }
+            }
+
+            function handleAddCourse() {
+                const titleInput = document.getElementById('newCourseTitle');
+                const capacityInput = document.getElementById('newCourseCapacity');
+                emsService.addCourse(titleInput.value, capacityInput.value);
+                titleInput.value = '';
+                capacityInput.value = 30;
+                renderCourses();
+            }
+
+            function handleDeleteCourse(id) {
+                 if (confirm('Are you sure you want to delete this course? All student enrollments will also be removed.')) {
+                    emsService.removeCourse(id);
+                    renderCourses();
+                    renderStudents(); 
+                }
+            }
+            
+            function handleEnrollment(e) {
+                const studentId = e.target.dataset.studentId;
+                const courseSelect = document.getElementById('enrollCourseSelect');
+                const courseId = courseSelect.value;
+                
+                if (courseId) {
+                    emsService.enrollStudent(studentId, courseId);
+                    showStudentEnrollmentModal(studentId);
+                    renderStudents();
+                    renderCourses();
+                } else {
+                    emsService.showMessage("Please select a valid course.", 'error');
+                }
+            }
+
+            function handleUnenrollment(e) {
+                const studentId = e.target.dataset.studentId;
+                const courseId = e.target.dataset.courseId;
+                
+                emsService.unenrollStudent(studentId, courseId);
+                showStudentEnrollmentModal(studentId);
+                renderStudents();
+                renderCourses();
+            }
+            
+            tabButtons.forEach(btn => btn.addEventListener('click', handleTabSwitch));
+            document.getElementById('addStudentBtn').addEventListener('click', handleAddStudent);
+            document.getElementById('addCourseBtn').addEventListener('click', handleAddCourse);
+            closeModalBtn.addEventListener('click', () => enrollmentModal.classList.add('hidden'));
+
+            renderStudents(); 
+
+        })();
+    </script>
+</body>
+</html>
